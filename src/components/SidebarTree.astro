@@ -8,7 +8,9 @@ interface Props {
 }
 
 const { node, currentPath } = Astro.props;
-const base = import.meta.env.BASE_URL;
+// BASE_URL has no trailing slash when `base` is set (e.g. "/Infinite-Horror"),
+// but is "/" by default — normalize so `${base}icons/...` always joins correctly.
+const base = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
 
 const href = pathToHref(node.path);
 const normalize = (p: string) => p.replace(/\/+$/, '') || '/';
