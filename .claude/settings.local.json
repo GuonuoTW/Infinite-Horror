@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\nuo\\\\Documents\\\\GitHub\\\\GuonuoTW.github.io\\\\GuonuoTW.github.io\\\\ss\" && cat root/Rules/battle/content.json && echo --- && cat root/context.md && echo --- && cat resizer.js && echo --- && cat icons.js)",
+      "Bash(npm --version)",
+      "PowerShell(npm run build)",
+      "PowerShell($out = \"C:\\\\Users\\\\nuo\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-nuo-Documents-GitHub-Infinite-Horror\\\\17617b67-8c3d-4f67-88c4-f22668221e01\\\\scratchpad\\\\chm-extract\"; $gbk = [System.Text.Encoding]::GetEncoding\\('GB18030'\\); $gbk.GetString\\([System.IO.File]::ReadAllBytes\\(\"$out\\\\page_12.html\"\\)\\).Substring\\(0, 2500\\))",
+      "Bash(node parse-toc.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(xargs wc -c)",
+      "Bash(sed -i 's|title: \"Flaws, Talents, and Quirks\"|title: \"Defects, Talents, and Quirks\"|; s|# Flaws, Talents, and Quirks|# Defects, Talents, and Quirks|' index.md)",
+      "Bash(sed -i 's|title: \"Flaws\"|title: \"Defects\"|; s|# Flaws|# Defects|' defects.md)"
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+---
+import { getCollection } from 'astro:content';
+import Rulebook from '../../../layouts/Rulebook.astro';
+import { splitId, pathToHref, LANGS, type Lang } from '../../../lib/tree';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+
+const UI: Record<Lang, Record<string, string>> = {
+  en: {
+    heading: 'Resources',
+    intro:
+      'Community-made content. Search by name or tag, or browse the folders in the sidebar.',
+    placeholder: 'Search resources by name or tag...',
+    noResults: 'No results found',
+    filterBy: 'Filter by',
+  },
+  zh: {
+    heading: '资源',
+    intro: '社区创作的内容。可按名称或标签搜索，也可以浏览边栏中的文件夹。',
+    placeholder: '按名称或标签搜索资源…',
+    noResults: '没有找到结果',
+    filterBy: '筛选标签',
+  },
+};
+const t = UI[lang];
+
+// Searchable list of this language's resources (folder index pages are
+// categories, not resources), embedded into the page as JSON.
+const entries = (await getCollection('resources')).filter(
+  (entry) => splitId(entry.id).lang === lang,
+);
+
+const categories = new Map<string, string>();
+for (const entry of entries) {
+  const { id } = splitId(entry.id);
+  if (id === 'index' || id.endsWith('/index')) {
+    categories.set(id.replace(/\/?index$/, ''), entry.data.title);
+  }
+}
+
+const searchData = entries
+  .filter((entry) => {
+    const { id } = splitId(entry.id);
+    return id !== 'index' && !id.endsWith('/index');
+  })
+  .map((entry) => {
+    const { id } = splitId(entry.id);
+    return {
+      title: entry.data.title,
+      url: pathToHref(`${lang}/resources/${id}`),
+      tags: entry.data.tags,
+      category: categories.get(id.split('/').slice(0, -1).join('/')) ?? '',
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
+---
+
+<Rulebook pageTitle={t.heading} section="resources" lang={lang}>
+  <h1>{t.heading}</h1>
+  <p>{t.intro}</p>
+  <input
+    type="text"
+    id="resourceSearch"
+    placeholder={t.placeholder}
+    autocomplete="off"
+  />
+  <div id="searchResults" data-no-results={t.noResults} data-filter-by={t.filterBy}>
+  </div>
+
+  <script type="application/json" id="resourceData" set:html={JSON.stringify(searchData)} />
+</Rulebook>
+
+<script>
+  // (Re)initialized on every visit to this page: with the client router,
+  // this module only executes once per session, but the search input is
+  // fresh DOM on each visit.
+  function initSearch() {
+    const input = document.getElementById('resourceSearch');
+    const resultsDiv = document.getElementById('searchResults');
+    const dataEl = document.getElementById('resourceData');
+    if (!input || !resultsDiv || !dataEl) return; // not on the resources page
+
+    const resources = JSON.parse(dataEl.textContent);
+
+    function matches(resource, query) {
+      const q = query.toLowerCase();
+      return (
+        resource.title.toLowerCase().includes(q) ||
+        resource.tags.some((tag) => tag.toLowerCase().includes(q))
+      );
+    }
+
+    function render(query) {
+      const found = query.trim()
+        ? resources.filter((r) => matches(r, query.trim()))
+        : resources;
+
+      resultsDiv.innerHTML = '';
+
+      if (found.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'no-results';
+        empty.textContent = resultsDiv.dataset.noResults;
+        resultsDiv.appendChild(empty);
+        return;
+      }
+
+      for (const resource of found) {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+
+        const link = document.createElement('a');
+        link.className = 'search-result-title';
+        link.href = resource.url;
+        link.textContent = resource.title;
+        item.appendChild(link);
+
+        if (resource.category) {
+          const cat = document.createElement('span');
+          cat.className = 'search-result-category';
+          cat.textContent = resource.category;
+          item.appendChild(cat);
+        }
+
+        for (const tag of resource.tags) {
+          const chip = document.createElement('button');
+          chip.className = 'tag-chip';
+          chip.textContent = tag;
+          chip.title = `${resultsDiv.dataset.filterBy}: ${tag}`;
+          chip.addEventListener('click', () => {
+            input.value = tag;
+            render(tag);
+          });
+          item.appendChild(chip);
+        }
+
+        resultsDiv.appendChild(item);
+      }
+    }
+
+    input.addEventListener('input', () => render(input.value));
+    render('');
+  }
+
+  document.addEventListener('astro:page-load', initSearch);
+</script>

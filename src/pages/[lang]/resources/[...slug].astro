@@ -1,0 +1,36 @@
+---
+import { getCollection, render } from 'astro:content';
+import Rulebook from '../../../layouts/Rulebook.astro';
+import { splitId, idToSlug, type Lang } from '../../../lib/tree';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('resources');
+  // The section root (/[lang]/resources/) is the search page (index.astro).
+  return entries
+    .filter((entry) => splitId(entry.id).id !== 'index')
+    .map((entry) => {
+      const { lang, id } = splitId(entry.id);
+      return {
+        params: { lang, slug: idToSlug(id) },
+        props: { entry },
+      };
+    });
+}
+
+const { entry } = Astro.props;
+const lang = Astro.params.lang as Lang;
+const { Content } = await render(entry);
+---
+
+<Rulebook pageTitle={entry.data.title} section="resources" lang={lang}>
+  {
+    entry.data.tags.length > 0 && (
+      <div class="tag-row">
+        {entry.data.tags.map((tag) => (
+          <span class="tag-chip">{tag}</span>
+        ))}
+      </div>
+    )
+  }
+  <Content />
+</Rulebook>

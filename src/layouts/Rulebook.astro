@@ -1,0 +1,83 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import SidebarTree from '../components/SidebarTree.astro';
+import { buildSectionTree, pathToHref, type Lang, type Section } from '../lib/tree';
+import '../styles/global.css';
+
+interface Props {
+  pageTitle: string;
+  section?: Section;
+  lang?: Lang;
+}
+
+const { pageTitle, section = 'rules', lang = 'en' } = Astro.props;
+const tree = await buildSectionTree(section, lang);
+const currentPath = Astro.url.pathname;
+
+const UI: Record<Lang, Record<string, string>> = {
+  en: {
+    rules: 'rules',
+    resources: 'resources',
+    openAll: 'open all',
+    closeAll: 'close all',
+    favorites: 'favorites',
+    langToggle: '中文',
+  },
+  zh: {
+    rules: '规则',
+    resources: '资源',
+    openAll: '全部展开',
+    closeAll: '全部折叠',
+    favorites: '收藏夹',
+    langToggle: 'English',
+  },
+};
+const t = UI[lang];
+
+const otherLang = lang === 'en' ? 'zh' : 'en';
+// Same page in the other language (content trees are mirrored). Kept
+// current across client-side navigation by lang.js.
+const langToggleHref = currentPath.replace(`/${lang}/`, `/${otherLang}/`);
+---
+
+<html lang={lang === 'zh' ? 'zh-CN' : 'en'} transition:animate="none">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle} – Infinite Horror</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <!-- Per-language persist key: the header carries over while navigating
+         within a language (so its labels stay put), but is replaced with
+         freshly translated labels when the language switches. Button clicks
+         are handled by delegation, so replacement is safe. -->
+    <div id="header" transition:persist={`header-${lang}`}>
+      <a class="header-btn" href={pathToHref(`${lang}/rules`)}>{t.rules}</a>
+      <a class="header-btn" href={pathToHref(`${lang}/resources`)}>{t.resources}</a>
+      <span class="header-sep"></span>
+      <button class="header-btn" id="openAll">{t.openAll}</button>
+      <button class="header-btn" id="closeAll">{t.closeAll}</button>
+      <button class="header-btn" id="showFavorites">{t.favorites}</button>
+      <button class="header-btn favorite-btn" id="favoriteToggle" title="favorite">☆</button>
+      <a class="header-btn" id="langToggle" href={langToggleHref}>{t.langToggle}</a>
+    </div>
+    <div id="main">
+      <!-- Per-language+section persist key: the sidebar carries over
+           unchanged while navigating within a section, but is replaced when
+           switching section or language. -->
+      <div id="sidebar" transition:persist={`sidebar-${lang}-${section}`}>
+        <SidebarTree node={tree} currentPath={currentPath} />
+      </div>
+      <div id="resizer" transition:persist="resizer"></div>
+      <div id="content">
+        <slot />
+      </div>
+    </div>
+
+    <script src="../scripts/sidebar.js"></script>
+    <script src="../scripts/favorites.js"></script>
+    <script src="../scripts/resizer.js"></script>
+    <script src="../scripts/lang.js"></script>
+  </body>
+</html>

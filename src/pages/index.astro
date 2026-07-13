@@ -1,0 +1,8 @@
+---
+import { DEFAULT_LANG } from '../lib/tree';
+
+// The site root goes to the rulebook in the default language.
+return Astro.redirect(
+  `${import.meta.env.BASE_URL.replace(/\/$/, '')}/${DEFAULT_LANG}/rules/`,
+);
+---

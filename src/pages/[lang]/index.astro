@@ -1,0 +1,12 @@
+---
+import { LANGS } from '../../lib/tree';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+return Astro.redirect(
+  `${import.meta.env.BASE_URL.replace(/\/$/, '')}/${lang}/rules/`,
+);
+---
